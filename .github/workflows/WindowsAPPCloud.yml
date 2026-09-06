@@ -25,24 +25,23 @@ jobs:
           Write-Host "Definindo senha da máquina..."
           net user runneradmin CloudGaming2026#
 
-      - name: Iniciar Túnel TCP com Serveo
+      - name: Iniciar Túnel TCP com Localhost.run
         shell: powershell
         run: |
-          Write-Host "Abrindo túnel TCP gratuito com Serveo..."
-          # Adicionados -N (só porta) e -T (sem terminal)
-          Start-Process -FilePath "ssh" -ArgumentList "-o StrictHostKeyChecking=no -T -N -R 0:localhost:3389 serveo.net" -RedirectStandardOutput "serveo.txt" -RedirectStandardError "serveo_err.txt" -NoNewWindow
+          Write-Host "Abrindo túnel TCP gratuito com Localhost.run..."
+          Start-Process -FilePath "ssh" -ArgumentList "-o StrictHostKeyChecking=no -T -N -R 0:localhost:3389 localhost.run" -RedirectStandardOutput "tunnel.txt" -RedirectStandardError "tunnel_err.txt" -NoNewWindow
           
           Write-Host "Aguardando o túnel estabilizar (12 segundos)..."
           Start-Sleep -Seconds 12
           
           Write-Host "--- RESULTADO DO TÚNEL ---"
-          if (Test-Path "serveo_err.txt") {
-              Get-Content "serveo_err.txt"
+          if (Test-Path "tunnel_err.txt") {
+              Get-Content "tunnel_err.txt"
           }
-          if (Test-Path "serveo.txt") {
-              Get-Content "serveo.txt"
+          if (Test-Path "tunnel.txt") {
+              Get-Content "tunnel.txt"
           }
-
+          
       - name: Manter Máquina Ligada
         shell: powershell
         run: |
