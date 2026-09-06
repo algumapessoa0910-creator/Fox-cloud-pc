@@ -61,16 +61,12 @@ jobs:
           Expand-Archive -Path "ngrok.zip" -DestinationPath "."
           
           $token = "${{ github.event.inputs.ngrok_token }}"
+          .\ngrok.exe config add-authtoken $token
           
-          # Força a gravação do token no arquivo de configuração padrão do Ngrok
-          .\ngrok.exe config add-authtoken --config="$HOME\.ngrok\ngrok.yml" $token
-          
-          # Inicia o túnel tcp na porta do RDP (3389)
-          Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -WindowStyle Hidden
-          
-          # Espera mais tempo para estabilizar
-          Write-Host "Aguardando 10 segundos para o túnel abrir..."
-          Start-Sleep -Seconds 10
+          # Inicia em primeiro plano e mostra o status na tela por 10 segundos para debug
+          Write-Host "Iniciando túnel TCP..."
+          Start-Job -ScriptBlock { .\ngrok.exe tcp 3389 }
+          Start-Sleep -Seconds 8
           
       - name: Obter Endereço para o Windows App
         shell: powershell
