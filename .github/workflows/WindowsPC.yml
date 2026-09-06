@@ -11,19 +11,19 @@ jobs:
       - name: Maximize Performance & Strip Bloatware
         shell: powershell
         run: |
-          Write-Host "Aplicando overclock lógico e otimizações de sistema..."
+          Write-Host "Aplicando otimizações de performance..."
           
-          # 1. Força o plano de energia de Alto Desempenho
+          # Força o plano de energia de Alto Desempenho
           powercfg -s 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
           
-          # 2. Desativa efeitos visuais e animações para poupar recursos
+          # Desativa efeitos visuais e animações
           Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Value 2
           Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00))
           
-          # 3. Desativa o Windows Defender para liberar 100% da CPU
+          # Desativa o Windows Defender
           try { Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue } catch {}
           
-          # 4. Desativa o serviço SysMain (SuperFetch)
+          # Desativa serviço SysMain
           Stop-Service -Name "SysMain" -Force -ErrorAction SilentlyContinue
           Set-Service -Name "SysMain" -StartupType Disabled -ErrorAction SilentlyContinue
 
