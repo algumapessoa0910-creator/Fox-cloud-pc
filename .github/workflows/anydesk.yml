@@ -28,11 +28,11 @@ jobs:
 
       - name: Install AnyDesk
         run: |
-          wget -qGO - https://keys.anydesk.com/repos/DEB-GPG-KEY | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/anydesk.gpg
+          wget -qO - https://keys.anydesk.com/repos/DEB-GPG-KEY | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/anydesk.gpg
           echo "deb http://deb.anydesk.com/ all main" | sudo tee /etc/apt/sources.list.d/anydesk.list
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y anydesk
-
+          
       - name: Start Display & AnyDesk Service
         run: |
           # 1. Inicia o D-Bus necessário para comunicação do AnyDesk
