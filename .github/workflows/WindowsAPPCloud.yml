@@ -1,0 +1,90 @@
+name: Cloud PC (Windows App + Firefox + Extreme Perf)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ngrok_token:
+        description: '3IwGKifRN0PdO11HaLxbZiMkGAD_7TuSJaVKesAbnRPXKJLPH'
+        required: true
+        default: ''
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Otimização Absolutamente Extrema (Debloat)
+        shell: powershell
+        run: |
+          Write-Host "Iniciando otimização extrema do Windows..."
+          
+          # 1. Desativar Efeitos Visuais (Foco em Performance)
+          Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects' -Name 'VisualFXSetting' -Value 2
+          
+          # 2. Desativar Serviços Inúteis (Impressora, Pesquisa, Telemetria)
+          Stop-Service -Name "Spooler", "WSearch", "SysMain", "DiagTrack" -Force -ErrorAction SilentlyContinue
+          Set-Service -Name "Spooler", "WSearch", "SysMain", "DiagTrack" -StartupType Disabled -ErrorAction SilentlyContinue
+          
+          # 3. Forçar Plano de Energia de Alto Desempenho
+          powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
+          
+          # 4. Ajustar prioridade de CPU para Programas em Primeiro Plano
+          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\PriorityControl" -Name "Win32PrioritySeparation" -Value 38
+          
+          Write-Host "Otimização concluída. RAM e CPU liberadas!"
+
+      - name: Instalar Firefox e Ngrok
+        shell: powershell
+        run: |
+          Write-Host "Baixando Firefox..."
+          winget install Mozilla.Firefox --silent --accept-package-agreements --accept-source-agreements
+          
+          Write-Host "Baixando Ngrok..."
+          winget install Ngrok.Ngrok --silent --accept-package-agreements --accept-source-agreements
+
+      - name: Configurar RDP (Windows App) e Firewall
+        shell: powershell
+        run: |
+          Write-Host "Habilitando RDP nativo..."
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop" -ErrorAction SilentlyContinue
+          
+          Write-Host "Definindo senha da máquina..."
+          net user runneradmin CloudGaming2026#
+
+      - name: Iniciar Túnel Ngrok
+        shell: powershell
+        run: |
+          $token = "${{ github.event.inputs.ngrok_token }}"
+          & "C:\Program Files\ngrok\ngrok.exe" config add-authtoken $token
+          Start-Process -FilePath "C:\Program Files\ngrok\ngrok.exe" -ArgumentList "tcp 3389" -WindowStyle Hidden
+          Start-Sleep -Seconds 6
+
+      - name: Obter Endereço para o Windows App
+        shell: powershell
+        run: |
+          try {
+              $response = Invoke-RestMethod -Uri "http://localhost:4040/api/tunnels"
+              $publicUrl = $response.tunnels[0].public_url
+              $cleanUrl = $publicUrl -replace "tcp://", ""
+              
+              Write-Host "===================================================="
+              Write-Host "   MÁQUINA EXTREMA PRONTA PARA O WINDOWS APP!       "
+              Write-Host "===================================================="
+              Write-Host " ENDEREÇO RDP: $cleanUrl"
+              Write-Host " USUÁRIO     : runneradmin"
+              Write-Host " SENHA       : CloudGaming2026#"
+              Write-Host "===================================================="
+          } catch {
+              Write-Host "Erro: O Túnel Ngrok não abriu. Verifique o seu Token."
+          }
+
+      - name: Manter Máquina Ligada
+        shell: powershell
+        run: |
+          Write-Host "Servidor online. Fechará automaticamente após o limite de tempo."
+          $mins = 350
+          for ($i = 1; $i -le $mins; $i++) {
+              Start-Sleep -Seconds 60
+          }
