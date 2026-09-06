@@ -30,7 +30,7 @@ jobs:
           Write-Host "Definindo senha da máquina..."
           net user runneradmin CloudGaming2026#
 
-      - name: Baixar, Iniciar Túnel Ngrok e Obter Endereço
+      - name: Baixar, Iniciar Túnel e Obter Endereço
         shell: powershell
         run: |
           Write-Host "Baixando Ngrok..."
@@ -40,8 +40,8 @@ jobs:
           $token = "${{ github.event.inputs.ngrok_token }}"
           .\ngrok.exe config add-authtoken $token
           
-          Write-Host "Iniciando túnel TCP na porta 3389..."
-          Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -WindowStyle Hidden
+          Write-Host "Iniciando túnel TCP e capturando logs de erro..."
+          Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -RedirectStandardError "ngrok_err.txt" -RedirectStandardOutput "ngrok_out.txt" -NoNewWindow
           
           Write-Host "Aguardando o túnel estabilizar (10 segundos)..."
           Start-Sleep -Seconds 10
@@ -68,7 +68,9 @@ jobs:
               Write-Host " SENHA       : CloudGaming2026#"
               Write-Host "===================================================="
           } else {
-              Write-Host "Erro Crítico: O Ngrok iniciou mas a API não respondeu."
+              Write-Host "=== ERRO DETECTADO NO NGROK ==="
+              if (Test-Path "ngrok_err.txt") { Get-Content "ngrok_err.txt" }
+              if (Test-Path "ngrok_out.txt") { Get-Content "ngrok_out.txt" }
               exit 1
           }
 
