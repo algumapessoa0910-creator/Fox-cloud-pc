@@ -48,23 +48,23 @@ jobs:
 
       - name: Start Display & AnyDesk (Optimized Resolution)
         run: |
-          # Resolução HD (720p) para exigir menos da CPU e acelerar a transmissão da imagem
+          # 1. Cria o servidor de tela virtual X11 na porta :99
           export DISPLAY=:99
           Xvfb :99 -screen 0 1280x720x24 -nolisten tcp &
+          sleep 2
           
-          # Inicia o LXDE (Interface minimalista)
-          export DISPLAY=:99
-          startlxde &
+          # 2. Inicia o gerenciador de janelas ultra-leve
+          openbox-session &
+          sleep 2
           
-          # Inicia o serviço
-          sudo service anydesk start
+          # 3. Força o AnyDesk a rodar diretamente dentro do servidor X11
+          sudo display-service-start &
+          sudo anydesk --service &
           sleep 3
           
-          # Define a senha
+          # 4. Configura a senha de acesso autônomo
           echo "${{ env.ANYDESK_PASS }}" | sudo anydesk --set-password
-          sudo service anydesk restart
-          sleep 3
-
+          
       - name: Fetch and Display AnyDesk Connection Address
         run: |
           cleanId=""
