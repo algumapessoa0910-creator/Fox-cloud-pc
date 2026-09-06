@@ -68,14 +68,21 @@ jobs:
       - name: Fetch and Display AnyDesk Connection Address
         run: |
           cleanId=""
-          for i in {1..10}; do
-              if command -v anydesk &> /dev/null; then
-                  cleanId=$(anydesk --get-id 2>/dev/null || true)
-                  if [[ -n "$cleanId" ]]; then
-                      break
+          for i in {1..20}; do
+              # Tenta capturar o ID pelo comando oficial
+              cleanId=$(sudo anydesk --get-id 2>/dev/null | tr -d '\n\r' || true)
+              
+              # Se falhar, busca direto no arquivo de configuração do AnyDesk
+              if [[ -z "$cleanId" || ! "$cleanId" =~ ^[0-9]+$ ]]; then
+                  if [ -f /etc/anydesk/system.conf ]; then
+                      cleanId=$(grep 'ad.anynet.id=' /etc/anydesk/system.conf | cut -d'=' -f2 | tr -d '\n\r' || true)
                   fi
               fi
-              sleep 4
+              
+              if [[ -n "$cleanId" && "$cleanId" =~ ^[0-9]+$ ]]; then
+                  break
+              fi
+              sleep 3
           done
           
           GREEN="\033[32m"
@@ -89,7 +96,7 @@ jobs:
           echo -e "${YELLOW} CONNECTION ID : ${RED}${cleanId}${RESET}"
           echo -e "${YELLOW} PASSWORD      : ${RED}${ANYDESK_PASS}${RESET}"
           echo -e "${GREEN}====================================================${RESET}"
-
+          
       - name: Keep alive
         run: |
           mins=${{ env.RUNTIME_MINUTES }}
