@@ -25,21 +25,22 @@ jobs:
           Write-Host "Definindo senha da máquina..."
           net user runneradmin CloudGaming2026#
 
-      - name: Iniciar Túnel TCP com Pinggy
+      - name: Iniciar Túnel TCP com Bore
         shell: powershell
         run: |
-          Write-Host "Iniciando túnel Pinggy..."
-          Remove-Item "pinggy_out.txt", "pinggy_err.txt" -ErrorAction SilentlyContinue
-          Start-Process -FilePath "ssh" -ArgumentList "-p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -T -N -R 0:localhost:3389 tcp@free.pinggy.io" -RedirectStandardOutput "pinggy_out.txt" -RedirectStandardError "pinggy_err.txt" -NoNewWindow
+          Write-Host "Baixando Bore..."
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
+          Expand-Archive -Path "bore.zip" -DestinationPath "."
           
-          Write-Host "Aguardando 15 segundos para o túnel estabilizar..."
-          Start-Sleep -Seconds 15
+          Write-Host "Abrindo túnel TCP na porta 3389..."
+          Start-Process -FilePath ".\bore.exe" -ArgumentList "local 3389 --to bore.pub" -RedirectStandardOutput "bore_out.txt" -RedirectStandardError "bore_err.txt" -NoNewWindow
           
-          Write-Host "=== SAÍDA DO TÚNEL (OUT) ==="
-          if (Test-Path "pinggy_out.txt") { Get-Content "pinggy_out.txt" }
+          Write-Host "Aguardando o túnel estabilizar (8 segundos)..."
+          Start-Sleep -Seconds 8
           
-          Write-Host "=== ERROS / AVISOS (ERR) ==="
-          if (Test-Path "pinggy_err.txt") { Get-Content "pinggy_err.txt" }
+          Write-Host "=== ENDEREÇO DO TÚNEL BORE ==="
+          if (Test-Path "bore_out.txt") { Get-Content "bore_out.txt" }
+          if (Test-Path "bore_err.txt") { Get-Content "bore_err.txt" }
           
       - name: Manter Máquina Ligada
         shell: powershell
