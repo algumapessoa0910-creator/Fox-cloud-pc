@@ -3,107 +3,84 @@ name: AnyDesk Linux Ultra-Optimized
 on:
   workflow_dispatch:
 
-permissions:
-  contents: read
-
-defaults:
-  run:
-    shell: bash
-
 jobs:
-  rdp:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+
     env:
       ANYDESK_PASS: Pass@1234
-      RUNTIME_MINUTES: 350
 
     steps:
-      - name: Purge Bloatware & Optimize Kernel (Max Performance)
-        run: |
-          echo "Desativando serviços pesados..."
-          sudo systemctl stop snapd 2>/dev/null || true
-          sudo apt-get purge -y snapd 2>/dev/null || true
-          
-          echo "Otimizando rede para baixa latência..."
-          sudo sysctl -w net.ipv4.tcp_low_latency=1 2>/dev/null || true
-          sudo sysctl -w net.ipv4.tcp_fastopen=3 2>/dev/null || true
-          sudo sysctl -w vm.swappiness=10 2>/dev/null || true
-          
-      - name: Install Ultra-Light GUI (LXDE) & 3D Software Rendering
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Ultra-Light GUI (LXDE) & Required Packages
         run: |
           sudo apt-get update
-          
-          # Instala LXDE e bibliotecas gráficas atualizadas do Ubuntu
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             lxde-core openbox xvfb wget gnupg2 curl x11vnc \
-            mesa-utils libgl1-mesa-dri libglx-mesa0 libgl1
-            
+            mesa-utils libgl1-mesa-dri libglx-mesa0 libgl1 \
+            dbus-x11 python3-xdg
+
       - name: Install AnyDesk
         run: |
-          wget -qO - https://keys.anydesk.com/repos/DEB-GPG-KEY | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/anydesk.gpg
-          echo "deb http://deb.anydesk.com/ all main" | sudo tee /etc/apt/sources.list.d/anydesk-stable.list
+          wget -qGO - https://keys.anydesk.com/repos/DEB-GPG-KEY | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/anydesk.gpg
+          echo "deb http://deb.anydesk.com/ all main" | sudo tee /etc/apt/sources.list.d/anydesk.list
           sudo apt-get update
-          sudo apt-get install -y anydesk
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y anydesk
 
-      - name: Start Display & AnyDesk (Optimized Resolution)
+      - name: Start Display & AnyDesk Service
         run: |
-          # 1. Cria o servidor de tela virtual X11 na porta :99
+          # 1. Inicia o D-Bus necessário para comunicação do AnyDesk
+          sudo service dbus start
+          
+          # 2. Sobe a tela virtual X11
           export DISPLAY=:99
           Xvfb :99 -screen 0 1280x720x24 -nolisten tcp &
           sleep 2
-          
-          # 2. Inicia o gerenciador de janelas ultra-leve
-          openbox-session &
+
+          # 3. Inicia o gerenciador de janelas LXDE/Openbox com D-Bus
+          dbus-launch openbox-session &
           sleep 2
-          
-          # 3. Força o AnyDesk a rodar diretamente dentro do servidor X11
-          sudo display-service-start &
-          sudo anydesk --service &
-          sleep 3
-          
-          # 4. Configura a senha de acesso autônomo
+
+          # 4. Inicia o AnyDesk atrelado explicitamente ao servidor X11
           echo "${{ env.ANYDESK_PASS }}" | sudo anydesk --set-password
-          
+          DISPLAY=:99 anydesk --tray &
+          sleep 5
+
       - name: Fetch and Display AnyDesk Connection Address
         run: |
           cleanId=""
           for i in {1..20}; do
-              # Tenta capturar o ID pelo comando oficial
               cleanId=$(sudo anydesk --get-id 2>/dev/null | tr -d '\n\r' || true)
-              
-              # Se falhar, busca direto no arquivo de configuração do AnyDesk
               if [[ -z "$cleanId" || ! "$cleanId" =~ ^[0-9]+$ ]]; then
                   if [ -f /etc/anydesk/system.conf ]; then
                       cleanId=$(grep 'ad.anynet.id=' /etc/anydesk/system.conf | cut -d'=' -f2 | tr -d '\n\r' || true)
                   fi
               fi
-              
               if [[ -n "$cleanId" && "$cleanId" =~ ^[0-9]+$ ]]; then
                   break
               fi
               sleep 3
           done
-          
+
           GREEN="\033[32m"
           YELLOW="\033[33m"
           RED="\033[31m"
           RESET="\033[0m"
-          
+
           echo -e "${GREEN}====================================================${RESET}"
           echo -e "${GREEN}        ANYDESK EXTREME OPTIMIZED IS READY          ${RESET}"
           echo -e "${GREEN}====================================================${RESET}"
           echo -e "${YELLOW} CONNECTION ID : ${RED}${cleanId}${RESET}"
           echo -e "${YELLOW} PASSWORD      : ${RED}${ANYDESK_PASS}${RESET}"
           echo -e "${GREEN}====================================================${RESET}"
-          
+
       - name: Keep alive
         run: |
-          mins=${{ env.RUNTIME_MINUTES }}
-          end_time=$(( $(date +%s) + (mins * 60) ))
-          
-          while [ $(date +%s) -lt $end_time ]; do
-            echo "Cloud Linux PC Heartbeat $(date +%H:%M:%S) | Active until $(date -d "@$end_time" +%H:%M:%S)"
+          mins=350
+          echo "Ativo por $mins minutos."
+          for i in $(seq 1 $mins); do
             sleep 60
           done
           
