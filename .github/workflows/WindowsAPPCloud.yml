@@ -1,4 +1,4 @@
-name: Cloud PC (Windows App + Firefox + Extreme Perf)
+name: Cloud PC (Windows App + Firefox + Ngrok)
 
 on:
   workflow_dispatch:
@@ -13,36 +13,13 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Otimização Absolutamente Extrema (Debloat)
+      - name: Instalar Firefox e Ferramentas
         shell: powershell
         run: |
-          Write-Host "Iniciando otimização extrema do Windows..."
-          
-          # 1. Desativar Efeitos Visuais (Foco em Performance)
-          Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects' -Name 'VisualFXSetting' -Value 2
-          
-          # 2. Desativar Serviços Inúteis (Um por um para não dar erro)
-          $services = "Spooler", "WSearch", "SysMain", "DiagTrack"
-          foreach ($srv in $services) {
-              Stop-Service -Name $srv -Force -ErrorAction SilentlyContinue
-              Set-Service -Name $srv -StartupType Disabled -ErrorAction SilentlyContinue
-          }
-          
-          # 3. Forçar Plano de Energia de Alto Desempenho
-          powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
-          
-          # 4. Ajustar prioridade de CPU para Programas em Primeiro Plano
-          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\PriorityControl" -Name "Win32PrioritySeparation" -Value 38
-          
-          Write-Host "Otimização concluída. RAM e CPU liberadas!"
-
-      - name: Instalar Firefox
-        shell: powershell
-        run: |
-          Write-Host "Baixando Firefox..."
+          Write-Host "Baixando e instalando Firefox..."
           winget install Mozilla.Firefox --silent --accept-package-agreements --accept-source-agreements
 
-      - name: Configurar RDP (Windows App) e Firewall
+      - name: Configurar RDP e Firewall
         shell: powershell
         run: |
           Write-Host "Habilitando RDP nativo..."
@@ -53,7 +30,7 @@ jobs:
           Write-Host "Definindo senha da máquina..."
           net user runneradmin CloudGaming2026#
 
-       - name: Baixar, Iniciar Túnel e Obter Endereço
+      - name: Baixar, Iniciar Túnel Ngrok e Obter Endereço
         shell: powershell
         run: |
           Write-Host "Baixando Ngrok..."
@@ -76,7 +53,7 @@ jobs:
                   $publicUrl = $response.tunnels[0].public_url
                   if ($publicUrl) { break }
               } catch {
-                  Write-Host "Tentativa $index de 5: Aguardando a API do Ngrok responder..."
+                  Write-Host "Tentativa $index de 5 - Aguardando a API do Ngrok responder..."
                   Start-Sleep -Seconds 5
               }
           }
@@ -94,12 +71,10 @@ jobs:
               Write-Host "Erro Crítico: O Ngrok iniciou mas a API não respondeu."
               exit 1
           }
-          
+
       - name: Manter Máquina Ligada
         shell: powershell
         run: |
           Write-Host "Servidor online. Fechará automaticamente após o limite de tempo."
-          $mins = 350
-          for ($i = 1; $i -le $mins; $i++) {
-              Start-Sleep -Seconds 60
-          }
+          while ($true) { Start-Sleep -Seconds 30 }
+          
