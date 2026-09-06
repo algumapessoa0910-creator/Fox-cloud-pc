@@ -1,4 +1,4 @@
-name: Cloud PC (Windows App + Serveo)
+name: Cloud PC (Windows App)
 
 on:
   workflow_dispatch:
@@ -25,21 +25,21 @@ jobs:
           Write-Host "Definindo senha da máquina..."
           net user runneradmin CloudGaming2026#
 
-      - name: Iniciar Túnel TCP com Localhost.run
+      - name: Iniciar Túnel TCP com Pinggy
         shell: powershell
         run: |
-          Write-Host "Abrindo túnel TCP gratuito com Localhost.run..."
-          Start-Process -FilePath "ssh" -ArgumentList "-o StrictHostKeyChecking=no -T -N -R 0:localhost:3389 localhost.run" -RedirectStandardOutput "tunnel.txt" -RedirectStandardError "tunnel_err.txt" -NoNewWindow
+          Write-Host "Abrindo túnel TCP gratuito com Pinggy..."
+          Start-Process -FilePath "ssh" -ArgumentList "-p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -T -N -R 0:localhost:3389 tcp@free.pinggy.io" -RedirectStandardOutput "pinggy_out.txt" -RedirectStandardError "pinggy_err.txt" -NoNewWindow
           
           Write-Host "Aguardando o túnel estabilizar (12 segundos)..."
           Start-Sleep -Seconds 12
           
-          Write-Host "--- RESULTADO DO TÚNEL ---"
-          if (Test-Path "tunnel_err.txt") {
-              Get-Content "tunnel_err.txt"
+          Write-Host "--- ENDEREÇO DO TÚNEL PINGGY ---"
+          if (Test-Path "pinggy_out.txt") {
+              Get-Content "pinggy_out.txt"
           }
-          if (Test-Path "tunnel.txt") {
-              Get-Content "tunnel.txt"
+          if (Test-Path "pinggy_err.txt") {
+              Get-Content "pinggy_err.txt"
           }
           
       - name: Manter Máquina Ligada
