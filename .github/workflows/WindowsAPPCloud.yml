@@ -24,8 +24,8 @@ jobs:
           
           Write-Host "Definindo senha da máquina..."
           net user runneradmin CloudGaming2026#
-
-      - name: Iniciar Túnel TCP com Bore (IP Direto)
+          
+      - name: Iniciar Túnel TCP com Bore (IP Direto Corrigido)
         shell: powershell
         run: |
           Write-Host "Baixando Bore..."
@@ -38,7 +38,8 @@ jobs:
           Write-Host "Aguardando o túnel estabilizar (8 segundos)..."
           Start-Sleep -Seconds 8
           
-          $output = Get-Content "bore_out.txt" -Raw
+          # Lê usando -Encoding Unicode para casar perfeitamente com o Start-Process
+          $output = Get-Content "bore_out.txt" -Encoding Unicode -Raw -ErrorAction SilentlyContinue
           if ($output -match "remote_port=(\d+)") {
               $port = $Matches[1]
               $ip = [System.Net.Dns]::GetHostAddresses("bore.pub")[0].IPAddressToString
@@ -47,9 +48,8 @@ jobs:
               Write-Host "   $ip`:$port"
               Write-Host "===================================================="
           } else {
-              Write-Host "Erro ao capturar a porta:"
-              Get-Content "bore_out.txt"
-              Get-Content "bore_err.txt"
+              Write-Host "Lendo logs alternativos..."
+              Get-Content "bore_out.txt" -ErrorAction SilentlyContinue
           }
           
       - name: Manter Máquina Ligada
