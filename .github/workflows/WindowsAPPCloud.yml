@@ -24,10 +24,16 @@ jobs:
           Write-Host "Abrindo túnel TCP..."
           Start-Process -FilePath ".\bore.exe" -ArgumentList "local 3389 --to bore.pub" -RedirectStandardOutput "bore_out.txt" -RedirectStandardError "bore_err.txt" -NoNewWindow
           
-          Write-Host "Aguardando o túnel estabilizar (8 segundos)..."
+          Write-Host "Aguardando o túnel estabilizar..."
           Start-Sleep -Seconds 8
           
-          $output = [System.IO.File]::ReadAllText("$PWD/bore_out.txt")
+          # Abre o arquivo em modo de compartilhamento de leitura para evitar bloqueio do processo
+          $fileStream = [System.IO.File]::Open("$PWD/bore_out.txt", [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+          $streamReader = New-Object System.IO.StreamReader($fileStream)
+          $output = $streamReader.ReadToEnd()
+          $streamReader.Close()
+          $fileStream.Close()
+
           if ($output -match "remote_port=(\d+)") {
               $port = $Matches[1]
               $ip = [System.Net.Dns]::GetHostAddresses("bore.pub")[0].IPAddressToString
@@ -36,10 +42,10 @@ jobs:
               Write-Host "   $ip`:$port"
               Write-Host "===================================================="
           } else {
-              Write-Host "Conteúdo do log:"
-              Get-Content "bore_out.txt"
+              Write-Host "Conteúdo do log lido:"
+              Write-Host $output
           }
-          
+
       - name: Manter Máquina Ligada
         shell: powershell
         run: |
