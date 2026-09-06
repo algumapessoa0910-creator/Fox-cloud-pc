@@ -1,4 +1,4 @@
-name: Windows Server Max Power (AnyDesk + Firefox)
+name: Windows Server (AnyDesk + Wallpaper)
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ jobs:
       - name: Maximize Performance & Strip Bloatware
         shell: powershell
         run: |
-          Write-Host "Aplicando otimizações de performance..."
+          Write-Host "Aplicando otimizações extremas..."
           
           # Força o plano de energia de Alto Desempenho
           powercfg -s 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
@@ -27,7 +27,32 @@ jobs:
           Stop-Service -Name "SysMain" -Force -ErrorAction SilentlyContinue
           Set-Service -Name "SysMain" -StartupType Disabled -ErrorAction SilentlyContinue
 
-      - name: Install Firefox & Clean Desktop
+      - name: Set Custom Anime Wallpaper from Web
+        shell: powershell
+        run: |
+          Write-Host "Baixando e aplicando o wallpaper do Discord..."
+          $wallpaperPath = "$env:TEMP\wallpaper.jpg"
+          
+          $imageUrl = "https://cdn.discordapp.com/attachments/1188762382697234534/1545968092524445797/thumb-1920-1399041.jpg?ex=6a9e127b&is=6a9cc0fb&hm=be14238b51fbbb774deb71e685612af3b45012be03cd9693b2b797f0c7a1969c&"
+          
+          try {
+              Invoke-WebRequest -Uri $imageUrl -OutFile $wallpaperPath
+              
+              Add-Type -TypeDefinition @"
+              using System;
+              using System.Runtime.InteropServices;
+              public class Wallpaper {
+                  [DllImport("user32.dll", CharSet = CharSet.Auto)]
+                  public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+              }
+              "@
+              [Wallpaper]::SystemParametersInfo(20, 0, $wallpaperPath, 3)
+              Write-Host "Wallpaper aplicado com sucesso!"
+          } catch {
+              Write-Host "Erro ao baixar o wallpaper. Verifique o link."
+          }
+
+      - name: Install Firefox & Clean Desktop (Home Screen)
         shell: powershell
         run: |
           Write-Host "Instalando o Firefox..."
@@ -40,7 +65,7 @@ jobs:
           Remove-Item "$publicDesktop\*" -Force -Recurse -ErrorAction SilentlyContinue
           Remove-Item "$userDesktop\*" -Force -Recurse -ErrorAction SilentlyContinue
           
-          # Cria o atalho do Firefox como único item na Home Screen
+          # Deixa apenas o Firefox na Home Screen
           $firefoxPath = "C:\Program Files\Mozilla Firefox\firefox.exe"
           if (Test-Path $firefoxPath) {
               $WshShell = New-Object -ComObject WScript.Shell
@@ -61,25 +86,21 @@ jobs:
 
           $anydeskPath = "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
           if (Test-Path $anydeskPath) {
-              Write-Host "Configurando senha de acesso desatendido..."
+              Write-Host "Configurando senha de acesso..."
               $senha = "CloudGaming2026#"
-              
-              # Usa o cmd /c para injetar a senha corretamente via pipe no Windows
               cmd /c "echo $senha | `"$anydeskPath`" --set-password"
               Start-Sleep -Seconds 3
               
               $id = cmd /c "`"$anydeskPath`" --get-id"
               
               Write-Host "===================================================="
-              Write-Host "   WINDOWS SERVER CLEAN & MAX POWER IS READY!       "
+              Write-Host "   WINDOWS SERVER IS READY!                         "
               Write-Host "===================================================="
               Write-Host " ANYDESK ID  : $id"
               Write-Host " SENHA       : CloudGaming2026#"
               Write-Host "===================================================="
-          } else {
-              Write-Error "AnyDesk não foi encontrado."
           }
-             
+
       - name: Keep Alive Loop
         shell: powershell
         run: |
@@ -87,11 +108,4 @@ jobs:
           for ($i = 1; $i -le $mins; $i++) {
               Start-Sleep -Seconds 60
           }
-          
-      - name: Keep Alive Loop
-        run: |
-          mins=350
-          for i in $(seq 1 $mins); do
-            sleep 60
-          done
           
