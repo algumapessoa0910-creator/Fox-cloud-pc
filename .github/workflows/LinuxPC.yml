@@ -1,0 +1,92 @@
+name: Cloud PC Gaming
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Maximize CPU, RAM & Network Performance
+        run: |
+          echo "Desativando serviços pesados em segundo plano..."
+          sudo systemctl stop snapd unattended-upgrades mysql* php* 2>/dev/null || true
+          sudo apt-get purge -y snapd 2>/dev/null || true
+          
+          echo "Otimizando Kernel para Baixa Latência e Jogos..."
+          sudo sysctl -w net.ipv4.tcp_low_latency=1 2>/dev/null || true
+          sudo sysctl -w net.ipv4.tcp_congestion_control=bbr 2>/dev/null || true
+          sudo sysctl -w vm.swappiness=10 2>/dev/null || true
+          sudo sysctl -w kernel.sched_min_granularity_ns=10000000 2>/dev/null || true
+
+      - name: Prepare Minimal Gaming Base (Wine + Vulkan)
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          
+          # Instala apenas o essencial, sem pacotes recomendados inúteis
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            xvfb xfwm4 xfce4-terminal dbus-x11 wget curl p7zip-full cabextract \
+            wine64 wine32 winetricks \
+            mesa-utils mesa-vulkan-drivers mesa-vulkan-drivers:i386 \
+            libgl1-mesa-dri libgl1-mesa-dri:i386 \
+            libvulkan1 libvulkan1:i386
+
+      - name: Install RustDesk
+        run: |
+          wget -q https://github.com/rustdesk/rustdesk/releases/download/1.2.3-1/rustdesk-1.2.3-1-x86_64.deb -O rustdesk.deb
+          sudo apt-get install -y ./rustdesk.deb || sudo apt-get install -f -y
+
+      - name: Start X11 Virtual Display & Extreme Wine Config
+        run: |
+          sudo service dbus start
+          
+          # 1. Tela virtual otimizada para 720p (melhor proporção qualidade/latência)
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1280x720x24 -nolisten tcp -dpi 96 +extension RANDR &
+          sleep 2
+          
+          # 2. Inicia o gerenciador XFWM4 com efeitos visuais desligados (--compositor=off)
+          dbus-launch xfwm4 --compositor=off &
+          sleep 2
+
+          # 3. Variáveis extremas para acelerar o Wine/Proton em CPUs multicore
+          export WINEPREFIX=$HOME/.wine
+          export WINEARCH=win64
+          export WINEESYNC=1
+          export WINEFSYNC=1
+          
+          # Inicializa o prefixo do Wine
+          wineboot -u &
+          sleep 5
+
+      - name: Start RustDesk Service
+        run: |
+          rustdesk --option pw_check_pattern 0 --set-pw "Pass1234" 2>/dev/null || true
+          DISPLAY=:99 rustdesk --service &
+          sleep 6
+
+      - name: Fetch Connection Info
+        run: |
+          ID=$(rustdesk --get-id 2>/dev/null | grep -o '[0-9]*' || echo "Aguarde...")
+          
+          GREEN="\033[32m"
+          YELLOW="\033[33m"
+          RED="\033[31m"
+          RESET="\033[0m"
+
+          echo -e "${GREEN}====================================================${RESET}"
+          echo -e "${GREEN}    LINUX GAMING PC (MAX OPTIMIZED) IS READY!       ${RESET}"
+          echo -e "${GREEN}====================================================${RESET}"
+          echo -e "${YELLOW} RUSTDESK ID : ${RED}${ID}${RESET}"
+          echo -e "${YELLOW} SENHA       : ${RED}Pass1234${RESET}"
+          echo -e "${GREEN}====================================================${RESET}"
+
+      - name: Keep Alive Loop
+        run: |
+          mins=350
+          for i in $(seq 1 $mins); do
+            sleep 60
+          done
+          
