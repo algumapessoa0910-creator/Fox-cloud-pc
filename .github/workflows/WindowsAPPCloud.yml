@@ -53,7 +53,7 @@ jobs:
           Write-Host "Definindo senha da máquina..."
           net user runneradmin CloudGaming2026#
 
-      - name: Baixar, Iniciar Túnel e Obter Endereço
+       - name: Baixar, Iniciar Túnel e Obter Endereço
         shell: powershell
         run: |
           Write-Host "Baixando Ngrok..."
@@ -66,18 +66,17 @@ jobs:
           Write-Host "Iniciando túnel TCP na porta 3389..."
           Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -WindowStyle Hidden
           
-          Write-Host "Aguardando o túnel estabilizar (15 segundos)..."
-          Start-Sleep -Seconds 15
+          Write-Host "Aguardando o túnel estabilizar (10 segundos)..."
+          Start-Sleep -Seconds 10
           
-          # Tentativa de puxar a URL com repetição caso demore
           $publicUrl = ""
-          for ($i=1; $i -le 5; $i++) {
+          for ($index = 1; $index -le 5; $index++) {
               try {
                   $response = Invoke-RestMethod -Uri "http://localhost:4040/api/tunnels" -ErrorAction Stop
                   $publicUrl = $response.tunnels[0].public_url
                   if ($publicUrl) { break }
               } catch {
-                  Write-Host "Tentativa $i: Aguardando a API do Ngrok responder..."
+                  Write-Host "Tentativa $index de 5: Aguardando a API do Ngrok responder..."
                   Start-Sleep -Seconds 5
               }
           }
@@ -94,7 +93,8 @@ jobs:
           } else {
               Write-Host "Erro Crítico: O Ngrok iniciou mas a API não respondeu."
               exit 1
-
+          }
+          
       - name: Manter Máquina Ligada
         shell: powershell
         run: |
