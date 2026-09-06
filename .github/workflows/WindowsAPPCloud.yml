@@ -14,18 +14,7 @@ jobs:
           Write-Host "Baixando e instalando Firefox..."
           winget install Mozilla.Firefox --silent --accept-package-agreements --accept-source-agreements
 
-      - name: Configurar RDP e Firewall
-        shell: powershell
-        run: |
-          Write-Host "Habilitando RDP nativo..."
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop" -ErrorAction SilentlyContinue
-          
-          Write-Host "Definindo senha da máquina..."
-          net user runneradmin CloudGaming2026#
-          
-      - name: Iniciar Túnel TCP com Bore (IP Direto Corrigido)
+      - name: Iniciar Túnel TCP com Bore (IP Direto)
         shell: powershell
         run: |
           Write-Host "Baixando Bore..."
@@ -38,18 +27,17 @@ jobs:
           Write-Host "Aguardando o túnel estabilizar (8 segundos)..."
           Start-Sleep -Seconds 8
           
-          # Lê usando -Encoding Unicode para casar perfeitamente com o Start-Process
-          $output = Get-Content "bore_out.txt" -Encoding Unicode -Raw -ErrorAction SilentlyContinue
+          $output = [System.IO.File]::ReadAllText("$PWD/bore_out.txt")
           if ($output -match "remote_port=(\d+)") {
               $port = $Matches[1]
               $ip = [System.Net.Dns]::GetHostAddresses("bore.pub")[0].IPAddressToString
               Write-Host "===================================================="
-              Write-Host "   COPIE ESTE ENDEREÇO IP PARA O WINDOWS APP:       "
+              Write-Host "   COPIE ESTE IP E PORTA PARA O WINDOWS APP:        "
               Write-Host "   $ip`:$port"
               Write-Host "===================================================="
           } else {
-              Write-Host "Lendo logs alternativos..."
-              Get-Content "bore_out.txt" -ErrorAction SilentlyContinue
+              Write-Host "Conteúdo do log:"
+              Get-Content "bore_out.txt"
           }
           
       - name: Manter Máquina Ligada
