@@ -61,18 +61,21 @@ jobs:
 
           $anydeskPath = "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
           if (Test-Path $anydeskPath) {
-              echo "Pass1234" | & $anydeskPath --set-password
+              # Senha forte exigida pelo AnyDesk moderno
+              $senha = "CloudGaming2026#"
+              $senha | & $anydeskPath --set-password
               Start-Sleep -Seconds 3
+              
               $id = cmd /c "`"$anydeskPath`" --get-id"
               
               Write-Host "===================================================="
-              Write-Host "   WINDOWS SERVER MAX POWER IS READY!               "
+              Write-Host "   WINDOWS SERVER CLEAN & MAX POWER IS READY!       "
               Write-Host "===================================================="
               Write-Host " ANYDESK ID  : $id"
-              Write-Host " SENHA       : Pass1234"
+              Write-Host " SENHA       : CloudGaming2026#"
               Write-Host "===================================================="
           }
-
+          
       - name: Keep Alive Loop
         shell: powershell
         run: |
