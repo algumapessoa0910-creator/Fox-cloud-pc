@@ -36,14 +36,11 @@ jobs:
           
           Write-Host "Otimização concluída. RAM e CPU liberadas!"
 
-      - name: Instalar Firefox e Ngrok
+      - name: Instalar Firefox
         shell: powershell
         run: |
           Write-Host "Baixando Firefox..."
           winget install Mozilla.Firefox --silent --accept-package-agreements --accept-source-agreements
-          
-          Write-Host "Baixando Ngrok..."
-          winget install Ngrok.Ngrok --silent --accept-package-agreements --accept-source-agreements
 
       - name: Configurar RDP (Windows App) e Firewall
         shell: powershell
@@ -56,12 +53,16 @@ jobs:
           Write-Host "Definindo senha da máquina..."
           net user runneradmin CloudGaming2026#
 
-      - name: Iniciar Túnel Ngrok
+      - name: Baixar e Iniciar Túnel Ngrok
         shell: powershell
         run: |
+          Write-Host "Baixando Ngrok versão portátil..."
+          Invoke-WebRequest -Uri "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip" -OutFile "ngrok.zip"
+          Expand-Archive -Path "ngrok.zip" -DestinationPath "."
+          
           $token = "${{ github.event.inputs.ngrok_token }}"
-          & "C:\Program Files\ngrok\ngrok.exe" config add-authtoken $token
-          Start-Process -FilePath "C:\Program Files\ngrok\ngrok.exe" -ArgumentList "tcp 3389" -WindowStyle Hidden
+          .\ngrok.exe config add-authtoken $token
+          Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -WindowStyle Hidden
           Start-Sleep -Seconds 6
 
       - name: Obter Endereço para o Windows App
