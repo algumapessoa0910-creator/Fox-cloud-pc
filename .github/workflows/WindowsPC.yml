@@ -78,7 +78,8 @@ jobs:
               Write-Host "===================================================="
           } else {
               Write-Error "AnyDesk não foi encontrado."
-              
+          }
+             
       - name: Keep Alive Loop
         shell: powershell
         run: |
