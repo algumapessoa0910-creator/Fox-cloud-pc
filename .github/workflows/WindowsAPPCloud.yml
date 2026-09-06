@@ -25,22 +25,32 @@ jobs:
           Write-Host "Definindo senha da máquina..."
           net user runneradmin CloudGaming2026#
 
-      - name: Iniciar Túnel TCP com Bore
+      - name: Iniciar Túnel TCP com Bore (IP Direto)
         shell: powershell
         run: |
           Write-Host "Baixando Bore..."
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
           Expand-Archive -Path "bore.zip" -DestinationPath "."
           
-          Write-Host "Abrindo túnel TCP na porta 3389..."
+          Write-Host "Abrindo túnel TCP..."
           Start-Process -FilePath ".\bore.exe" -ArgumentList "local 3389 --to bore.pub" -RedirectStandardOutput "bore_out.txt" -RedirectStandardError "bore_err.txt" -NoNewWindow
           
           Write-Host "Aguardando o túnel estabilizar (8 segundos)..."
           Start-Sleep -Seconds 8
           
-          Write-Host "=== ENDEREÇO DO TÚNEL BORE ==="
-          if (Test-Path "bore_out.txt") { Get-Content "bore_out.txt" }
-          if (Test-Path "bore_err.txt") { Get-Content "bore_err.txt" }
+          $output = Get-Content "bore_out.txt" -Raw
+          if ($output -match "remote_port=(\d+)") {
+              $port = $Matches[1]
+              $ip = [System.Net.Dns]::GetHostAddresses("bore.pub")[0].IPAddressToString
+              Write-Host "===================================================="
+              Write-Host "   COPIE ESTE ENDEREÇO IP PARA O WINDOWS APP:       "
+              Write-Host "   $ip`:$port"
+              Write-Host "===================================================="
+          } else {
+              Write-Host "Erro ao capturar a porta:"
+              Get-Content "bore_out.txt"
+              Get-Content "bore_err.txt"
+          }
           
       - name: Manter Máquina Ligada
         shell: powershell
