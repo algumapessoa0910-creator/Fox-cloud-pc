@@ -28,19 +28,18 @@ jobs:
       - name: Iniciar Túnel TCP com Pinggy
         shell: powershell
         run: |
-          Write-Host "Abrindo túnel TCP gratuito com Pinggy..."
+          Write-Host "Iniciando túnel Pinggy..."
+          Remove-Item "pinggy_out.txt", "pinggy_err.txt" -ErrorAction SilentlyContinue
           Start-Process -FilePath "ssh" -ArgumentList "-p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -T -N -R 0:localhost:3389 tcp@free.pinggy.io" -RedirectStandardOutput "pinggy_out.txt" -RedirectStandardError "pinggy_err.txt" -NoNewWindow
           
-          Write-Host "Aguardando o túnel estabilizar (12 segundos)..."
-          Start-Sleep -Seconds 12
+          Write-Host "Aguardando 15 segundos para o túnel estabilizar..."
+          Start-Sleep -Seconds 15
           
-          Write-Host "--- ENDEREÇO DO TÚNEL PINGGY ---"
-          if (Test-Path "pinggy_out.txt") {
-              Get-Content "pinggy_out.txt"
-          }
-          if (Test-Path "pinggy_err.txt") {
-              Get-Content "pinggy_err.txt"
-          }
+          Write-Host "=== SAÍDA DO TÚNEL (OUT) ==="
+          if (Test-Path "pinggy_out.txt") { Get-Content "pinggy_out.txt" }
+          
+          Write-Host "=== ERROS / AVISOS (ERR) ==="
+          if (Test-Path "pinggy_err.txt") { Get-Content "pinggy_err.txt" }
           
       - name: Manter Máquina Ligada
         shell: powershell
