@@ -32,20 +32,15 @@ jobs:
         run: |
           Write-Host "Baixando e aplicando o wallpaper do Discord..."
           $wallpaperPath = "$env:TEMP\wallpaper.jpg"
-          
           $imageUrl = "https://cdn.discordapp.com/attachments/1188762382697234534/1545968092524445797/thumb-1920-1399041.jpg?ex=6a9e127b&is=6a9cc0fb&hm=be14238b51fbbb774deb71e685612af3b45012be03cd9693b2b797f0c7a1969c&"
           
           try {
               Invoke-WebRequest -Uri $imageUrl -OutFile $wallpaperPath
               
-              Add-Type -TypeDefinition @"
-              using System;
-              using System.Runtime.InteropServices;
-              public class Wallpaper {
-                  [DllImport("user32.dll", CharSet = CharSet.Auto)]
-                  public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-              }
-              "@
+              # Método seguro de linha única para evitar erros de formatação
+              $code = 'using System; using System.Runtime.InteropServices; public class Wallpaper { [DllImport("user32.dll", CharSet = CharSet.Auto)] public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni); }'
+              Add-Type -TypeDefinition $code
+              
               [Wallpaper]::SystemParametersInfo(20, 0, $wallpaperPath, 3)
               Write-Host "Wallpaper aplicado com sucesso!"
           } catch {
