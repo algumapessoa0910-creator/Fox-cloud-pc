@@ -34,10 +34,10 @@ jobs:
         run: |
           sudo apt-get update
           
-          # Instala o núcleo mínimo do LXDE, Xvfb e bibliotecas de aceleração 3D emulada
+          # Instala LXDE e bibliotecas gráficas atualizadas do Ubuntu
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             lxde-core openbox xvfb wget gnupg2 curl x11vnc \
-            mesa-utils libgl1-mesa-dri libglx-mesa0 libgl1-mesa-glx
+            mesa-utils libgl1-mesa-dri libglx-mesa0 libgl1
             
       - name: Install AnyDesk
         run: |
