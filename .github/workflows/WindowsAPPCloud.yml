@@ -56,15 +56,22 @@ jobs:
       - name: Baixar e Iniciar Túnel Ngrok
         shell: powershell
         run: |
-          Write-Host "Baixando Ngrok versão portátil..."
+          Write-Host "Baixando Ngrok..."
           Invoke-WebRequest -Uri "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip" -OutFile "ngrok.zip"
           Expand-Archive -Path "ngrok.zip" -DestinationPath "."
           
           $token = "${{ github.event.inputs.ngrok_token }}"
-          .\ngrok.exe config add-authtoken $token
+          
+          # Força a gravação do token no arquivo de configuração padrão do Ngrok
+          .\ngrok.exe config add-authtoken --config="$HOME\.ngrok\ngrok.yml" $token
+          
+          # Inicia o túnel tcp na porta do RDP (3389)
           Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -WindowStyle Hidden
-          Start-Sleep -Seconds 6
-
+          
+          # Espera mais tempo para estabilizar
+          Write-Host "Aguardando 10 segundos para o túnel abrir..."
+          Start-Sleep -Seconds 10
+          
       - name: Obter Endereço para o Windows App
         shell: powershell
         run: |
