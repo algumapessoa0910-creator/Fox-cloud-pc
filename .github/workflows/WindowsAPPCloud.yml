@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ngrok_token:
-        description: '3IwGKifRN0PdO11HaLxbZiMkGAD_7TuSJaVKesAbnRPXKJLPH'
+        description: 'AuthToken NGROK'
         required: true
         default: ''
 
@@ -21,9 +21,12 @@ jobs:
           # 1. Desativar Efeitos Visuais (Foco em Performance)
           Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects' -Name 'VisualFXSetting' -Value 2
           
-          # 2. Desativar Serviços Inúteis (Impressora, Pesquisa, Telemetria)
-          Stop-Service -Name "Spooler", "WSearch", "SysMain", "DiagTrack" -Force -ErrorAction SilentlyContinue
-          Set-Service -Name "Spooler", "WSearch", "SysMain", "DiagTrack" -StartupType Disabled -ErrorAction SilentlyContinue
+          # 2. Desativar Serviços Inúteis (Um por um para não dar erro)
+          $services = "Spooler", "WSearch", "SysMain", "DiagTrack"
+          foreach ($srv in $services) {
+              Stop-Service -Name $srv -Force -ErrorAction SilentlyContinue
+              Set-Service -Name $srv -StartupType Disabled -ErrorAction SilentlyContinue
+          }
           
           # 3. Forçar Plano de Energia de Alto Desempenho
           powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
