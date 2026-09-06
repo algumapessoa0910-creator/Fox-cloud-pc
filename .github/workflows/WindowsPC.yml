@@ -61,9 +61,11 @@ jobs:
 
           $anydeskPath = "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
           if (Test-Path $anydeskPath) {
-              # Senha forte exigida pelo AnyDesk moderno
+              Write-Host "Configurando senha de acesso desatendido..."
               $senha = "CloudGaming2026#"
-              $senha | & $anydeskPath --set-password
+              
+              # Usa o cmd /c para injetar a senha corretamente via pipe no Windows
+              cmd /c "echo $senha | `"$anydeskPath`" --set-password"
               Start-Sleep -Seconds 3
               
               $id = cmd /c "`"$anydeskPath`" --get-id"
@@ -74,8 +76,9 @@ jobs:
               Write-Host " ANYDESK ID  : $id"
               Write-Host " SENHA       : CloudGaming2026#"
               Write-Host "===================================================="
-          }
-          
+          } else {
+              Write-Error "AnyDesk não foi encontrado."
+              
       - name: Keep Alive Loop
         shell: powershell
         run: |
