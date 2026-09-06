@@ -1,0 +1,90 @@
+name: Windows Server Max Power (AnyDesk + Firefox)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Maximize Performance & Strip Bloatware
+        shell: powershell
+        run: |
+          Write-Host "Aplicando overclock lógico e otimizações de sistema..."
+          
+          # 1. Força o plano de energia de Alto Desempenho
+          powercfg -s 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
+          
+          # 2. Desativa efeitos visuais e animações para poupar recursos
+          Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Value 2
+          Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00))
+          
+          # 3. Desativa o Windows Defender para liberar 100% da CPU
+          try { Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue } catch {}
+          
+          # 4. Desativa o serviço SysMain (SuperFetch)
+          Stop-Service -Name "SysMain" -Force -ErrorAction SilentlyContinue
+          Set-Service -Name "SysMain" -StartupType Disabled -ErrorAction SilentlyContinue
+
+      - name: Install Firefox & Clean Desktop
+        shell: powershell
+        run: |
+          Write-Host "Instalando o Firefox..."
+          winget install Mozilla.Firefox --silent --accept-package-agreements --accept-source-agreements
+          
+          # Limpa completamente a Área de Trabalho
+          $publicDesktop = [Environment]::GetFolderPath('CommonDesktopDirectory')
+          $userDesktop = [Environment]::GetFolderPath('Desktop')
+          
+          Remove-Item "$publicDesktop\*" -Force -Recurse -ErrorAction SilentlyContinue
+          Remove-Item "$userDesktop\*" -Force -Recurse -ErrorAction SilentlyContinue
+          
+          # Cria o atalho do Firefox como único item na Home Screen
+          $firefoxPath = "C:\Program Files\Mozilla Firefox\firefox.exe"
+          if (Test-Path $firefoxPath) {
+              $WshShell = New-Object -ComObject WScript.Shell
+              $Shortcut = $WshShell.CreateShortcut("$userDesktop\Firefox.lnk")
+              $Shortcut.TargetPath = $firefoxPath
+              $Shortcut.Save()
+          }
+
+      - name: Install & Configure AnyDesk
+        shell: powershell
+        run: |
+          Write-Host "Baixando e instalando o AnyDesk..."
+          $url = "https://download.anydesk.com/AnyDesk.exe"
+          Invoke-WebRequest -Uri $url -OutFile "AnyDesk.exe"
+          
+          Start-Process -FilePath "AnyDesk.exe" -ArgumentList '--install "C:\Program Files (x86)\AnyDesk" --start-with-win --create-shortcuts --create-desktop-icon --silent' -Wait
+          Start-Sleep -Seconds 5
+
+          $anydeskPath = "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"
+          if (Test-Path $anydeskPath) {
+              echo "Pass1234" | & $anydeskPath --set-password
+              Start-Sleep -Seconds 3
+              $id = cmd /c "`"$anydeskPath`" --get-id"
+              
+              Write-Host "===================================================="
+              Write-Host "   WINDOWS SERVER MAX POWER IS READY!               "
+              Write-Host "===================================================="
+              Write-Host " ANYDESK ID  : $id"
+              Write-Host " SENHA       : Pass1234"
+              Write-Host "===================================================="
+          }
+
+      - name: Keep Alive Loop
+        shell: powershell
+        run: |
+          $mins = 350
+          for ($i = 1; $i -le $mins; $i++) {
+              Start-Sleep -Seconds 60
+          }
+          
+      - name: Keep Alive Loop
+        run: |
+          mins=350
+          for i in $(seq 1 $mins); do
+            sleep 60
+          done
+          
