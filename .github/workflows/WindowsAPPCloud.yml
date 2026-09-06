@@ -53,7 +53,7 @@ jobs:
           Write-Host "Definindo senha da máquina..."
           net user runneradmin CloudGaming2026#
 
-      - name: Baixar e Iniciar Túnel Ngrok
+      - name: Baixar, Iniciar Túnel e Obter Endereço
         shell: powershell
         run: |
           Write-Host "Baixando Ngrok..."
@@ -63,19 +63,27 @@ jobs:
           $token = "${{ github.event.inputs.ngrok_token }}"
           .\ngrok.exe config add-authtoken $token
           
-          # Inicia em primeiro plano e mostra o status na tela por 10 segundos para debug
-          Write-Host "Iniciando túnel TCP..."
-          Start-Job -ScriptBlock { .\ngrok.exe tcp 3389 }
-          Start-Sleep -Seconds 8
+          Write-Host "Iniciando túnel TCP na porta 3389..."
+          Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -WindowStyle Hidden
           
-      - name: Obter Endereço para o Windows App
-        shell: powershell
-        run: |
-          try {
-              $response = Invoke-RestMethod -Uri "http://localhost:4040/api/tunnels"
-              $publicUrl = $response.tunnels[0].public_url
+          Write-Host "Aguardando o túnel estabilizar (15 segundos)..."
+          Start-Sleep -Seconds 15
+          
+          # Tentativa de puxar a URL com repetição caso demore
+          $publicUrl = ""
+          for ($i=1; $i -le 5; $i++) {
+              try {
+                  $response = Invoke-RestMethod -Uri "http://localhost:4040/api/tunnels" -ErrorAction Stop
+                  $publicUrl = $response.tunnels[0].public_url
+                  if ($publicUrl) { break }
+              } catch {
+                  Write-Host "Tentativa $i: Aguardando a API do Ngrok responder..."
+                  Start-Sleep -Seconds 5
+              }
+          }
+          
+          if ($publicUrl) {
               $cleanUrl = $publicUrl -replace "tcp://", ""
-              
               Write-Host "===================================================="
               Write-Host "   MÁQUINA EXTREMA PRONTA PARA O WINDOWS APP!       "
               Write-Host "===================================================="
@@ -83,9 +91,9 @@ jobs:
               Write-Host " USUÁRIO     : runneradmin"
               Write-Host " SENHA       : CloudGaming2026#"
               Write-Host "===================================================="
-          } catch {
-              Write-Host "Erro: O Túnel Ngrok não abriu. Verifique o seu Token."
-          }
+          } else {
+              Write-Host "Erro Crítico: O Ngrok iniciou mas a API não respondeu."
+              exit 1
 
       - name: Manter Máquina Ligada
         shell: powershell
