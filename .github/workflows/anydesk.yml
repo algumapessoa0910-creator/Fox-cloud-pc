@@ -21,14 +21,14 @@ jobs:
     steps:
       - name: Purge Bloatware & Optimize Kernel (Max Performance)
         run: |
-          echo "Desativando serviços pesados e de nuvem..."
-          sudo systemctl stop snapd unattended-upgrades
-          sudo apt-get purge -y snapd unattended-upgrades multipath-tools
+          echo "Desativando serviços pesados..."
+          sudo systemctl stop snapd 2>/dev/null || true
+          sudo apt-get purge -y snapd 2>/dev/null || true
           
-          echo "Otimizando rede para baixa latência no AnyDesk..."
-          sudo sysctl -w net.ipv4.tcp_low_latency=1
-          sudo sysctl -w net.ipv4.tcp_fastopen=3
-          sudo sysctl -w vm.swappiness=10
+          echo "Otimizando rede para baixa latência..."
+          sudo sysctl -w net.ipv4.tcp_low_latency=1 2>/dev/null || true
+          sudo sysctl -w net.ipv4.tcp_fastopen=3 2>/dev/null || true
+          sudo sysctl -w vm.swappiness=10 2>/dev/null || true
           
       - name: Install Ultra-Light GUI (LXDE) & 3D Software Rendering
         run: |
