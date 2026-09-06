@@ -1,12 +1,7 @@
-name: Cloud PC (Windows App + Firefox + Ngrok)
+name: Cloud PC (Windows App + Serveo)
 
 on:
   workflow_dispatch:
-    inputs:
-      ngrok_token:
-        description: 'AuthToken NGROK'
-        required: true
-        default: ''
 
 jobs:
   build:
@@ -30,53 +25,32 @@ jobs:
           Write-Host "Definindo senha da máquina..."
           net user runneradmin CloudGaming2026#
 
-      - name: Baixar, Iniciar Túnel e Obter Endereço
+      - name: Iniciar Túnel TCP com Serveo
         shell: powershell
         run: |
-          Write-Host "Baixando Ngrok..."
-          Invoke-WebRequest -Uri "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip" -OutFile "ngrok.zip"
-          Expand-Archive -Path "ngrok.zip" -DestinationPath "."
-          
-          $token = "${{ github.event.inputs.ngrok_token }}"
-          .\ngrok.exe config add-authtoken $token
-          
-          Write-Host "Iniciando túnel TCP e capturando logs de erro..."
-          Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -RedirectStandardError "ngrok_err.txt" -RedirectStandardOutput "ngrok_out.txt" -NoNewWindow
+          Write-Host "Abrindo túnel TCP gratuito..."
+          # Dispara o túnel SSH em segundo plano salvando os logs
+          Start-Process -FilePath "ssh" -ArgumentList "-o StrictHostKeyChecking=no -R 0:localhost:3389 serveo.net" -RedirectStandardOutput "serveo.txt" -RedirectStandardError "serveo_err.txt" -NoNewWindow
           
           Write-Host "Aguardando o túnel estabilizar (10 segundos)..."
           Start-Sleep -Seconds 10
           
-          $publicUrl = ""
-          for ($index = 1; $index -le 5; $index++) {
-              try {
-                  $response = Invoke-RestMethod -Uri "http://localhost:4040/api/tunnels" -ErrorAction Stop
-                  $publicUrl = $response.tunnels[0].public_url
-                  if ($publicUrl) { break }
-              } catch {
-                  Write-Host "Tentativa $index de 5 - Aguardando a API do Ngrok responder..."
-                  Start-Sleep -Seconds 5
-              }
+          if (Test-Path "serveo.txt") {
+              $content = Get-Content "serveo.txt" -Raw
+              Write-Host "--- LOGS DO TÚNEL ---"
+              Write-Host $content
+              Write-Host "---------------------"
           }
-          
-          if ($publicUrl) {
-              $cleanUrl = $publicUrl -replace "tcp://", ""
-              Write-Host "===================================================="
-              Write-Host "   MÁQUINA EXTREMA PRONTA PARA O WINDOWS APP!       "
-              Write-Host "===================================================="
-              Write-Host " ENDEREÇO RDP: $cleanUrl"
-              Write-Host " USUÁRIO     : runneradmin"
-              Write-Host " SENHA       : CloudGaming2026#"
-              Write-Host "===================================================="
-          } else {
-              Write-Host "=== ERRO DETECTADO NO NGROK ==="
-              if (Test-Path "ngrok_err.txt") { Get-Content "ngrok_err.txt" }
-              if (Test-Path "ngrok_out.txt") { Get-Content "ngrok_out.txt" }
-              exit 1
+          if (Test-Path "serveo_err.txt") {
+              $errContent = Get-Content "serveo_err.txt" -Raw
+              Write-Host "--- ERROS / CONEXÃO ---"
+              Write-Host $errContent
+              Write-Host "------------------------"
           }
 
       - name: Manter Máquina Ligada
         shell: powershell
         run: |
-          Write-Host "Servidor online. Fechará automaticamente após o limite de tempo."
+          Write-Host "Servidor online via Serveo."
           while ($true) { Start-Sleep -Seconds 30 }
           
