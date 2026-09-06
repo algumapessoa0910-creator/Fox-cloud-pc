@@ -1,4 +1,4 @@
-name: AnyDesk Linux Ultra-Optimized
+name: AnyDesk Linux Ultra-Optimized + Wine
 
 on:
   workflow_dispatch:
@@ -14,13 +14,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Ultra-Light GUI (LXDE) & Required Packages
+      - name: Install Ultra-Light GUI (LXDE), Wine & 3D Dependencies
         run: |
+          sudo dpkg --add-architecture i386
           sudo apt-get update
+          
+          # Instala LXDE, AnyDesk/X11 deps e ambiente WINE/Mesa para rodar jogos .exe
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             lxde-core openbox xvfb wget gnupg2 curl x11vnc \
             mesa-utils libgl1-mesa-dri libglx-mesa0 libgl1 \
-            dbus-x11 python3-xdg
+            dbus-x11 python3-xdg \
+            wine64 wine32 winetricks cabextract p7zip-full
 
       - name: Install AnyDesk
         run: |
@@ -34,12 +38,12 @@ jobs:
           # 1. Inicia o D-Bus necessário para comunicação do AnyDesk
           sudo service dbus start
           
-          # 2. Sobe a tela virtual X11
+          # 2. Sobe a tela virtual X11 com resolução HD
           export DISPLAY=:99
           Xvfb :99 -screen 0 1280x720x24 -nolisten tcp &
           sleep 2
 
-          # 3. Inicia o gerenciador de janelas LXDE/Openbox com D-Bus
+          # 3. Inicia o gerenciador de janelas
           dbus-launch openbox-session &
           sleep 2
 
