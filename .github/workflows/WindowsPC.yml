@@ -11,12 +11,12 @@ jobs:
       - name: Maximize Performance & Strip Bloatware
         shell: powershell
         run: |
-          Write-Host "Aplicando otimizações extremas..."
-          powercfg -s 8c5e7fda-e8bf-4a96-9a85-365e3575d373
-          Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Value 2
+          Write-Host "Aplicando otimizacoes..."
+          try { powercfg /s SCHEME_MIN } catch {}
+          try { Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Value 2 } catch {}
           try { Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue } catch {}
-          Stop-Service -Name "SysMain" -Force -ErrorAction SilentlyContinue
-          Set-Service -Name "SysMain" -StartupType Disabled -ErrorAction SilentlyContinue
+          try { Stop-Service -Name "SysMain" -Force -ErrorAction SilentlyContinue } catch {}
+          try { Set-Service -Name "SysMain" -StartupType Disabled -ErrorAction SilentlyContinue } catch {}
 
       - name: Install Firefox & Clean Desktop (Home Screen)
         shell: powershell
